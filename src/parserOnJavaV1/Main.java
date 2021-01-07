@@ -20,18 +20,36 @@ public class Main {
 	    private static ImageSaver imageSaver;
 	    private static String tableName;
 	    private static int insertCount;
+	    private static ArrayList<String> excludeLink;
 	public static void main(String[] args) throws Exception{ 
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		int exportId, exportCategory;
-		String inputCommand;
+		String inputCommand, excludeLinkReadLine;
 		
 		BufferedReader br2 = new BufferedReader(new FileReader(new File("C://Eclipse/parserOnJavaV1/export/exportId.txt")));
+		
+		BufferedReader br3 = new BufferedReader(new FileReader(new File("C://Eclipse/parserOnJavaV1/export/excludeLinks.txt")));
+		
 		exportId = Integer.parseInt(br2.readLine());
 		exportCategory = Integer.parseInt(br2.readLine());
 		
-		tableName = "granat"; 
-		
+		//1. Set table name
+		tableName = "klipsy_s_kristalami"; 
+	
+		// Import exclude links
+		excludeLink = new ArrayList<>();
+		while((excludeLinkReadLine = br3.readLine()) != null) {
+	
+			excludeLink.add(excludeLinkReadLine);
+		}
+		/*excludeLink.add("/ru/item/35654");
+		excludeLink.add("/ru/item/26317");
+		excludeLink.add("/ru/item/56389");
+		excludeLink.add("/ru/item/56557");
+		excludeLink.add("/ru/item/56386");
+		*/
 		inputCommand = br.readLine();
+		
 		if(inputCommand.equals("1")) {
 			con = connectDB();
 			TextFileExport tfe = new TextFileExport();
@@ -42,38 +60,37 @@ public class Main {
 		
 		//connection to db
 		con = connectDB();
-		//name of table in DB
+
 		
 	
 		
-		//starting position URL
-		links.add("/ru/item/77349");
-		links.add("/ru/item/77348");
-		links.add("/ru/item/74707");
-		/*links.add("/ru/item/73895");
-		links.add("/ru/item/5988");
-		links.add("/ru/item/72339");
-		 	*/
 		int i=0;
-		
-		
 		statement.execute("DELETE FROM "+tableName);
 		
+		//parser start position
+		parseStartingPosition(inputCommand);
 		
-		
+		//parser loop
 		while(i<links.size()) {
 			parseElements("https://izida.biz"+links.get(i));
-
-		
 			i++;
 		}
 		
 		TextFileExport tfe = new TextFileExport();
 		tfe.export(statement, tableName, exportId, exportCategory);
 		tfe.exportId();
-		
-	    log(insertCount+" products added");
-	
+		//export exclude links, uncomment if needed
+		/*
+		BufferedWriter bw = new BufferedWriter(new FileWriter( new File("C://Eclipse/parserOnJavaV1/export/excludeLinks.txt")));
+	    log(insertCount+" products added to DB");
+	    for(String str: links) {
+	    	bw.write(str);
+	    	bw.write("\n");
+	    }
+	    bw.flush();
+	    bw.close();
+	    */
+	    br3.close();
 	    br2.close();
 	    con.close();
 	}
@@ -90,7 +107,7 @@ public class Main {
           
             Class.forName("org.postgresql.Driver");
 
-            String url = "jdbc:postgresql://192.168.3.130:5432/postgres";
+            String url = "jdbc:postgresql://192.168.172.129:5432/postgres";
 
              connection = DriverManager.getConnection(url, "evgen", "root");
              statement = connection.createStatement();
@@ -109,10 +126,51 @@ public class Main {
     	}
 	
 	
+	private static void parseStartingPosition(String startLink) throws Exception{
+		
+		Document doc = Jsoup.connect(startLink).get();
+		
+		Elements elUl = doc.getElementsByTag("ul");
+		Elements elDivs = doc.getElementsByTag("div");
+		
+		for(Element inputElements : elUl) {
+			String resultClass = inputElements.attr("class");
+			
+			if(resultClass.equals("black black-in")) {
+				log("product page");
+				
+				for(Element inputDivs : elDivs) {
+					String resultDivs = inputDivs.attr("class");
+					
+					if(resultDivs.equals("img-h-2")) {
+						//log(inputDivs.getElementsByTag("a").attr("href"));
+						if(!excludeLink.contains(inputDivs.getElementsByTag("a").attr("href"))) {
+						links.add(inputDivs.getElementsByTag("a").attr("href"));
+						}
+					}
+				}
+			}
+			if(resultClass.equals("white white-in")) {
+				log("catalog page");
+				
+				for(Element inputDivs: elDivs) {
+					String resultDivs = inputDivs.attr("class");
+					if(resultDivs.equals("img-h")) {
+						//log(inputDivs.getElementsByTag("a").attr("href"));
+						parseStartingPosition("https://izida.biz" + inputDivs.getElementsByTag("a").attr("href"));
+					}
+				}
+				return;
+			}
+		}
+	}
+	
+	
 	
 	public static void parseElements(String str) throws Exception{
 		ResultSet rs;
 		Document doc = Jsoup.connect(str).get();
+		log(str);
 		String title, content, priceStr, artidStr,image= null, description = null;
 		int artid, price;
 		//Поиск заголовка
@@ -157,7 +215,11 @@ public class Main {
 	    	String href = input.attr("href");
 	    	
 	    	if(href.contains("/ru/item/") && !links.contains(href) && !href.contains("izida.biz")) {
-	    	links.add(href);
+	    		//exception link(mirrors)
+	    		if(!excludeLink.contains(href)) {
+	    			
+	    			links.add(href);
+	    		}
 	    	}
 	    }
 	    
