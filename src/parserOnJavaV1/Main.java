@@ -21,6 +21,7 @@ public class Main {
 	    private static String tableName;
 	    private static int insertCount;
 	    private static ArrayList<String> excludeLink;
+	    private static ArrayList<String> badIdLinks = new ArrayList<>();
 	public static void main(String[] args) throws Exception{ 
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		int exportId, exportCategory;
@@ -34,7 +35,7 @@ public class Main {
 		exportCategory = Integer.parseInt(br2.readLine());
 		
 		//1. Set table name
-		tableName = "klipsy_s_kristalami"; 
+		tableName = "pod_kapelnoye_serebro"; 
 	
 		// Import exclude links
 		excludeLink = new ArrayList<>();
@@ -72,7 +73,7 @@ public class Main {
 		
 		//parser loop
 		while(i<links.size()) {
-			parseElements("https://izida.biz"+links.get(i));
+			parseElements(links.get(i));
 			i++;
 		}
 		
@@ -90,6 +91,12 @@ public class Main {
 	    bw.flush();
 	    bw.close();
 	    */
+		if(badIdLinks.size() > 0) {
+			log("List of errors IDs VVV");
+		for(String logStr: badIdLinks) {
+			log(logStr);
+		}
+		}
 	    br3.close();
 	    br2.close();
 	    con.close();
@@ -169,7 +176,8 @@ public class Main {
 	
 	public static void parseElements(String str) throws Exception{
 		ResultSet rs;
-		Document doc = Jsoup.connect(str).get();
+		
+		Document doc = Jsoup.connect("https://izida.biz"+str).get();
 		log(str);
 		String title, content, priceStr, artidStr,image= null, description = null;
 		int artid, price;
@@ -180,15 +188,27 @@ public class Main {
 	    Elements elPrice = doc.getElementsByClass("price-2");
 	    priceStr = elPrice.html();
 	    //log("Цена: " + priceStr);
+	    try {
 	    price = Integer.parseInt(priceStr.split(" ")[0]);
+	    }catch(NumberFormatException e) {
+	    	badIdLinks.add(str);
+	    	log("BAD PRICE");
+	    	return;
+	    }
 	    //log(price);
 	    
 	    //Поиск артикула
 	    Elements elID = doc.getElementsByClass("dop");
 	    //log(elID.html());
 	    artidStr = elID.html();
+	    try {
 	    artid = Integer.parseInt(artidStr.split(" ")[1]);
-	   // log(artid+"");
+	    }catch(NumberFormatException e) {
+	    	badIdLinks.add(str);
+	    	log("BAD ID");
+	    	return;
+	    }
+	    //log(artid+"");
 	   
 	    Elements elDescription = doc.getElementsByTag("meta");
 	    for(Element inputElement : elDescription) {
