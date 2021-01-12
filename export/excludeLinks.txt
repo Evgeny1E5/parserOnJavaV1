@@ -204,3 +204,8 @@
 /ru/item/7589
 /ru/item/75282
 /ru/item/59394
+/ru/item/70313
+/ru/item/19786
+/ru/item/62840
+/ru/item/62842
+/ru/item/63190
