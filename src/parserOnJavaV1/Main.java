@@ -10,6 +10,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.io.*;
+//import parserOnJavaV1.Cyr2lat;
 
 public class Main {
 	private static Connection connection;
@@ -18,28 +19,23 @@ public class Main {
 	private static Statement statement = null;
 //	private static ImageSaver imageSaver;
 	private static String tableName;
-	
+	private static int exportId, exportCategory;
 
 	public static void main(String[] args) throws Exception {
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		int exportId, exportCategory;
-		String inputCommand, excludeLinkReadLine;
+	
+		String inputCommand1, inputCommand2, excludeLinkReadLine;
 		ArrayList<ParserElements> parserElementsList = new ArrayList<>();
 		links = Collections.synchronizedList(new ArrayList<String>());
 		excludeLinks = Collections.synchronizedList(new ArrayList<String>());
 		badIdLinks = Collections.synchronizedList(new ArrayList<String>());
-
-		BufferedReader br2 = new BufferedReader(
-				new FileReader(new File("C://Eclipse/parserOnJavaV1/export/exportId.txt")));
+		//HashMap<String, String> categoriesLinks = new HashMap<>();
 
 		BufferedReader br3 = new BufferedReader(
 				new FileReader(new File("C://Eclipse/parserOnJavaV1/export/excludeLinks.txt")));
 
-		exportId = Integer.parseInt(br2.readLine());
-		exportCategory = Integer.parseInt(br2.readLine());
-
 		// 1. Set table name
-		tableName = "muzhskie_kolca";
+		tableName = "ukrasheniya_noviy_god";
 
 		// Import exclude links
 		while ((excludeLinkReadLine = br3.readLine()) != null) {
@@ -51,32 +47,41 @@ public class Main {
 		 * excludeLink.add("/ru/item/56389"); excludeLink.add("/ru/item/56557");
 		 * excludeLink.add("/ru/item/56386");
 		 */
-		inputCommand = br.readLine();
+		inputCommand1 = br.readLine();
+		inputCommand2 = br.readLine();
 
-		if (inputCommand.equals("1")) {
-			con = connectDB();
-			TextFileExport tfe = new TextFileExport();
-			tfe.export(statement, tableName, exportId, exportCategory);
-			tfe.exportId();
+		if (inputCommand1.equals("1")) {
+			if (inputCommand2.equals("1")) {
+				parseExportIdAndCategory();
+				con = connectDB();
+				TextFileExport tfe = new TextFileExport();
+				tfe.export(statement, tableName, exportId, exportCategory);
+				tfe.exportId();
 			return;
 		} else {
-
+			parseExportIdAndCategory();
 			// connection to db
 			con = connectDB();
 			statement.execute("DELETE FROM " + tableName);
 
 			// parser start position
-			parseStartingPosition(inputCommand);
+			parseStartingPosition(inputCommand2);
 
 			// parser loop
 			int i = 0;
 			while (i < links.size()) {
-				parserElementsList.add(new ParserElements(links.get(i), links, excludeLinks, badIdLinks, statement, tableName));
+				parserElementsList
+						.add(new ParserElements(links.get(i), links, excludeLinks, badIdLinks, statement, tableName));
+				if (i == 11) {
+					Thread.sleep(1000);
+				}
+				Thread.sleep(300);
 				i++;
 				log(i);
 			}
-			for(ParserElements ps: parserElementsList) {
-				if(ps.isAlive()) ps.join();
+			for (ParserElements ps : parserElementsList) {
+				if (ps.isAlive())
+					ps.join();
 			}
 
 			TextFileExport tfe = new TextFileExport();
@@ -96,12 +101,14 @@ public class Main {
 				}
 			}
 			br3.close();
-			br2.close();
 			con.close();
 		}
-	}
-
-
+		}else if(inputCommand1.equals("2")) {
+			parseExportIdAndCategory();
+			ParserMultipleCategories parserMultipleCategories = new ParserMultipleCategories(inputCommand2, statement, exportId, exportCategory);
+			parserMultipleCategories.startParsingMultipleCategories();
+			}
+		}
 
 	private static Connection connectDB() {
 		try {
@@ -162,6 +169,16 @@ public class Main {
 				}
 				return;
 			}
+		}
+	}
+
+	private static void parseExportIdAndCategory() {
+		try (BufferedReader br2 = new BufferedReader(
+				new FileReader(new File("C://Eclipse/parserOnJavaV1/export/exportId.txt")));) {
+			exportId = Integer.parseInt(br2.readLine());
+			exportCategory = Integer.parseInt(br2.readLine());
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 

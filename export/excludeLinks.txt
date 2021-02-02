@@ -209,3 +209,5 @@
 /ru/item/62840
 /ru/item/62842
 /ru/item/63190
+/ru/item/67343
+/ru/item/71046

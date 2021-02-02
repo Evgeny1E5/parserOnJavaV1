@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class ImageSaver {
-	public static void saveImage(String imageUrl,String imageName, String tableName) {
+	public void saveImage(String imageUrl,String imageName, String tableName) {
 		URL url;
 		URLConnection connection = null;
 		

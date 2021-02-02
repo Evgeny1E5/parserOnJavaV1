@@ -38,7 +38,7 @@ public class ParserElements extends Thread {
 			e.printStackTrace();
 			return;
 		}
-		//log(str);
+		log(str);
 	
 		String title, priceStr, artidStr, image = null, description = null;
 		int artid, price;
@@ -52,9 +52,11 @@ public class ParserElements extends Thread {
 		try {
 			price = Integer.parseInt(priceStr.split(" ")[0]);
 		} catch (NumberFormatException e) {
-			badIdLinks.add(str);
+			price = Math.round(Float.parseFloat(priceStr.split(" ")[0]));
+			price++;
+			/*badIdLinks.add(str);
 			log("BAD PRICE");
-			return;
+			return;*/
 		}
 		// log(price);
 
@@ -107,8 +109,8 @@ public class ParserElements extends Thread {
 					+ "VALUES ('" + title.toString() + "','" + price + "','" + artid + "','" + description + "','"
 					+ image + "')");
 
-			// imageSaver = new ImageSaver();
-			ImageSaver.saveImage(image, artid + "", tableName);
+		   
+			new ImageSaver().saveImage(image, artid + "", tableName);
 
 		} catch (SQLException e) {
 			e.printStackTrace();

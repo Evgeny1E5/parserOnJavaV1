@@ -1,27 +1,28 @@
 package parserOnJavaV1;
 
 import java.io.*;
-import java.io.OutputStreamWriter;
-import java.sql.*;
+
 
 public class TextFileExport2 {
-	public void export(Statement statement, String tableName, int id, int exportCategory) throws Exception {
-		String title, description;
-		int price, artid;
+	OutputStreamWriter osw;
+	private int id, exportCategory;
+	TextFileExport2(){
+		try {
+			osw = new OutputStreamWriter(new FileOutputStream(new File("C://Eclipse/parserOnJavaV1/export/oc_export_to_db.sql")), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public void export(String tableName,String title, String description, int artid, int price, int exportCategory) throws Exception {
+			this.exportCategory = exportCategory;
 		
-		
-		BufferedWriter bw1 = new BufferedWriter(new FileWriter(new File("C://Eclipse/parserOnJavaV1/export/oc_product.csv")));
-		BufferedWriter bw2 = new BufferedWriter(new FileWriter(new File("C://Eclipse/parserOnJavaV1/export/oc_product_to_category.csv")));
-		OutputStreamWriter bw3 = new OutputStreamWriter(new FileOutputStream(new File("C://Eclipse/parserOnJavaV1/export/oc_product_description.csv")),  "UTF-8");
-		BufferedWriter bw4 = new BufferedWriter(new FileWriter(new File("C://Eclipse/parserOnJavaV1/export/oc_product_to_store.csv")));
-		
-		ResultSet rs = statement.executeQuery("SELECT title, price, artid, description FROM "+tableName);
-		
-		while(rs.next()) {
-			title = rs.getString("title");
-			price = rs.getInt("price");
-			artid = rs.getInt("artid");
-			description = rs.getString("description");
+			
+			
+			
 			if(description.toLowerCase().contains("izida") || description.toLowerCase().contains("изида")) {
 				description = description.replace("изида", "");
 				description = description.replace("izida", "");
@@ -37,32 +38,33 @@ public class TextFileExport2 {
 			}
 			
 			
-			bw1.write("\""+id+"\",\""+artid+"\",,,,,,,,\"100\",\"7\",\"catalog/"+tableName+"/"+artid+".jpg\",\"0\",\"1\",\""+Math.addExact(price, price)+"\",\"0\",\"0\",\"0000-00-00\",\"0.00000000\",\"1\",\"0.00000000\",\"0.00000000\",\"0.00000000\",\"1\",\"1\",\"1\",\"1\",\"1\",\"1\",\"0000-00-00 00:00:00\",\"0000-00-00 00:00:00\",\"1\"");
-			bw1.write("\n");
+			osw.write("INSERT INTO `oc_product` (`product_id`, `model`, `sku`, `upc`, `ean`, `jan`, `isbn`, `mpn`, `location`, `quantity`, `stock_status_id`, `image`, `manufacturer_id`, `shipping`, `price`, `points`, `tax_class_id`, `date_available`, `weight`, `weight_class_id`, `length`, `width`, `height`, `length_class_id`, `subtract`, `minimum`, `sort_order`, `status`, `viewed`, `date_added`, `date_modified`, `noindex`) VALUES\r\n" + 
+					"("+id+", '"+artid+"', '', '', '', '', '', '', '', 100, 7, 'catalog/"+tableName+"/"+artid+".jpg', 0, 1, '"+Math.addExact(price, price)+"', 0, 0, '0000-00-00', '0.00000000', 1, '0.00000000', '0.00000000', '0.00000000', 1, 1, 1, 1, 1, 1, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1);\n");
 			
-			bw2.write("\""+id+"\",\""+exportCategory+"\",\"1\"");
-			bw2.write("\n");
+			osw.write("INSERT INTO `oc_product_description` (`product_id`, `language_id`, `name`, `description`, `tag`, `meta_title`, `meta_description`, `meta_keyword`, `meta_h1`) VALUES("+id+", 1, '"+title+"', '"+description+"', '', '', '', '', '');\n");
 			
-			bw3.write("\""+id+"\",\"1\",\""+title+"\",\""+description+"\",,,,,");
-			bw3.write("\n");
+			osw.write("INSERT INTO `oc_product_to_category` (`product_id`, `category_id`, `main_category`) VALUES("+id+", "+exportCategory+", 1);\n");
 			
-			bw4.write("\""+id+"\",\"0\"");
-			bw4.write("\n");
-			
-			
-			
+			osw.write("INSERT INTO `oc_product_to_store` (`product_id`, `store_id`) VALUES("+id+", 0);\n");
 			
 			id++;
-		}
-		bw1.flush();
-		bw1.close();
-		bw2.flush();
-		bw2.close();
-		bw3.flush();
-		bw3.close();
-		bw4.flush();
-		bw4.close();
-		System.out.println("CSV exported");
+	}
+	public void closeStreams() throws Exception{
+		osw.flush();
+		osw.close();
+		System.out.println("SQL exported");
+	}
+	public void setIdAndCategory(int exportId) {
+		this.id = exportId;
 		
+	}
+	
+	public void exportId() throws Exception{
+		BufferedWriter bw = new BufferedWriter(new FileWriter(new File("C://Eclipse/parserOnJavaV1/export/exportId.txt")));
+		bw.write(id+"");
+		bw.write("\n");
+		bw.write((exportCategory+1)+"");
+		bw.flush();
+		bw.close();
 	}
 }
